@@ -1,0 +1,19 @@
+kind = "design-system"
+previewPath = "/quick-mark-system/"
+title = "Quick Mark Design System"
+description = "The shared visual language for Quick Mark: a fast, clear, touch-first photo annotation product with pale-blue surfaces, electric-blue actions, deep navy editor chrome, and privacy-conscious messaging."
+version = "1.0.0"
+id = "artifacts/quick-mark-system"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/quick-mark-system/" ]
+localPort = 23835
+
+[services.development]
+run = "pnpm --filter @workspace/quick-mark-system run dev"
+
+[services.env]
+PORT = "23835"
+BASE_PATH = "/quick-mark-system/"
