@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Quick Mark"
+description = "A mobile MVP for capturing or choosing photos, adding point, rectangle, and text annotations, applying a light watermark, saving annotated images locally, and sharing them quickly."
+version = "1.0.0"
+id = "artifacts/quick-mark"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 22808
+
+[services.development]
+run = "pnpm --filter @workspace/quick-mark run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/quick-mark", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/quick-mark", "run", "serve" ]
+
+[services.env]
+PORT = "22808"
+BASE_PATH = "/"

@@ -1,0 +1,1 @@
+- [Quick Mark MVP scope](quick-mark-mvp.md) — the first release is intentionally local-only, with no account, cloud sync, or backend dependency.
