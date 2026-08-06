@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "SlhgVaDKpBBRjQKK9vm4G"
+uri = "file://design/quick-mark-design.handoff.json"
+type = "unspecified"
+title = "Quick Mark design handoff JSON"
+description = "Structured design contract for AI rendering and design-system tooling, including tokens, screens, component rules, states, interactions, and asset references."
+
+[[outputs]]
+id = "ZStL6Y7T2n5dxeHoywkjk"
+uri = "file://design/quick-mark-design-handoff.md"
+type = "text"
+title = "Quick Mark design handoff guide"
+description = "Human-readable visual and interaction handoff for the Quick Mark mobile MVP, with screen map, color direction, behavior, and AI rendering constraints."

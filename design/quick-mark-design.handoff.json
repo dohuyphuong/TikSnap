@@ -1,0 +1,533 @@
+{
+  "$schema": "https://quick-mark.local/schemas/design-handoff.v1.json",
+  "document": {
+    "name": "Quick Mark",
+    "version": "1.0.0",
+    "source": "artifacts/quick-mark",
+    "sourceCanvasShape": "shape:artifact:v3:artifacts/quick-mark",
+    "purpose": "A touch-first mobile photo annotation experience for quickly marking a detail, adding a note, saving the composed image, and sharing it.",
+    "targetPlatform": "mobile",
+    "canonicalViewport": {
+      "width": 402,
+      "height": 874,
+      "orientation": "portrait"
+    },
+    "renderingNotes": [
+      "Render as a native-feeling mobile surface, not a responsive desktop dashboard.",
+      "Use safe-area insets for the top and bottom of every screen.",
+      "Keep the primary action reachable and visually dominant.",
+      "Do not use emojis in the interface.",
+      "Keep photos and annotation data local unless cloud sync is explicitly added later."
+    ]
+  },
+  "brand": {
+    "identity": "Quick Mark helps people point out what matters in a photo without opening a full photo editor.",
+    "personality": [
+      "fast",
+      "clear",
+      "friendly",
+      "confident",
+      "privacy-conscious"
+    ],
+    "voice": {
+      "tone": "short, direct, encouraging",
+      "sentenceCase": true,
+      "avoid": [
+        "technical jargon",
+        "long instructions",
+        "generic filler copy"
+      ]
+    }
+  },
+  "tokens": {
+    "color": {
+      "background": "#F7F9FC",
+      "surface": "#FFFFFF",
+      "foreground": "#132238",
+      "mutedForeground": "#6C7B91",
+      "border": "#DDE5F0",
+      "primary": "#1457FF",
+      "primaryForeground": "#FFFFFF",
+      "secondary": "#EAF0FF",
+      "secondaryForeground": "#173776",
+      "accent": "#FFF0E8",
+      "accentForeground": "#A8471F",
+      "destructive": "#E5484D",
+      "editorBackground": "#111C2F",
+      "editorSurface": "#25334A",
+      "annotation": {
+        "red": "#FF5C5C",
+        "yellow": "#FFD166",
+        "mint": "#49D6B2"
+      }
+    },
+    "typography": {
+      "fontFamily": "Inter",
+      "weights": {
+        "regular": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700
+      },
+      "styles": {
+        "eyebrow": {
+          "fontSize": 12,
+          "fontWeight": 700,
+          "letterSpacing": 2.3,
+          "textTransform": "uppercase"
+        },
+        "display": {
+          "fontSize": 29,
+          "fontWeight": 700,
+          "letterSpacing": -0.8,
+          "lineHeight": 35
+        },
+        "screenTitle": {
+          "fontSize": 26,
+          "fontWeight": 700,
+          "letterSpacing": -0.6,
+          "lineHeight": 31
+        },
+        "sectionTitle": {
+          "fontSize": 19,
+          "fontWeight": 700,
+          "letterSpacing": -0.3,
+          "lineHeight": 24
+        },
+        "body": {
+          "fontSize": 14,
+          "fontWeight": 400,
+          "lineHeight": 21
+        },
+        "caption": {
+          "fontSize": 11,
+          "fontWeight": 500,
+          "lineHeight": 16
+        }
+      }
+    },
+    "spacing": {
+      "page": 20,
+      "xs": 4,
+      "sm": 8,
+      "md": 12,
+      "lg": 16,
+      "xl": 20,
+      "xxl": 28,
+      "section": 31
+    },
+    "radii": {
+      "control": 14,
+      "card": 20,
+      "hero": 26,
+      "pill": 999
+    },
+    "elevation": {
+      "primaryAction": {
+        "shadowColor": "#1457FF",
+        "shadowOpacity": 0.22,
+        "shadowRadius": 14,
+        "shadowOffsetY": 7
+      },
+      "sheet": {
+        "shadowColor": "#061024",
+        "shadowOpacity": 0.2,
+        "shadowRadius": 18,
+        "shadowOffsetY": -7
+      }
+    }
+  },
+  "navigation": {
+    "routes": [
+      {
+        "path": "/",
+        "name": "Home",
+        "purpose": "Choose a photo source and reopen recent work."
+      },
+      {
+        "path": "/editor",
+        "name": "Editor",
+        "purpose": "Place point, area, and text annotations over a photo."
+      },
+      {
+        "path": "/settings",
+        "name": "Settings",
+        "purpose": "Configure watermark behavior and view privacy information."
+      }
+    ],
+    "transition": "native slide from right",
+    "persistentChrome": "none"
+  },
+  "screens": {
+    "home": {
+      "route": "/",
+      "viewportBehavior": "vertical scroll only when recent work exceeds available height",
+      "layout": {
+        "horizontalPadding": 20,
+        "topSafeArea": true,
+        "sections": [
+          {
+            "id": "header",
+            "purpose": "Brand recognition and settings access",
+            "elements": [
+              {
+                "type": "eyebrow",
+                "text": "QUICK MARK"
+              },
+              {
+                "type": "heading",
+                "text": "Make the detail clear."
+              },
+              {
+                "type": "iconButton",
+                "icon": "sliders",
+                "action": "open /settings",
+                "accessibilityLabel": "Open settings"
+              }
+            ]
+          },
+          {
+            "id": "hero",
+            "purpose": "Explain the product in one glance",
+            "surface": "#E8EEFF",
+            "radius": 26,
+            "elements": [
+              {
+                "type": "iconTile",
+                "icon": "scan-outline",
+                "surface": "#FFFFFF"
+              },
+              {
+                "type": "heading",
+                "text": "Point it out."
+              },
+              {
+                "type": "body",
+                "text": "Capture a moment, mark what matters, and send it in seconds."
+              },
+              {
+                "type": "benefitList",
+                "items": [
+                  {
+                    "icon": "zap",
+                    "text": "Fast by design"
+                  },
+                  {
+                    "icon": "lock",
+                    "text": "Stays on device"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "sourceActions",
+            "purpose": "Start the first-use flow",
+            "layout": "two equal cards with 12px gap",
+            "elements": [
+              {
+                "type": "primaryActionCard",
+                "icon": "camera-outline",
+                "title": "Capture",
+                "hint": "Use camera",
+                "action": "launch native camera"
+              },
+              {
+                "type": "secondaryActionCard",
+                "icon": "images-outline",
+                "title": "Choose",
+                "hint": "From library",
+                "action": "launch native photo library"
+              }
+            ]
+          },
+          {
+            "id": "recentWork",
+            "purpose": "Reopen saved images",
+            "heading": "Recent work",
+            "supportingText": "A couple of quick examples",
+            "emptyBehavior": "Show two tasteful example image cards until a saved image exists.",
+            "savedBehavior": "Show up to 24 most recent locally saved images.",
+            "card": {
+              "layout": "two equal image cards",
+              "height": 188,
+              "radius": 20,
+              "imageTreatment": "cover with a dark translucent overlay",
+              "overlay": {
+                "position": "bottom-left",
+                "title": "13px semibold white",
+                "date": "11px regular white at 78% opacity"
+              },
+              "actionIcon": "arrow-up-right",
+              "longPressAction": "confirm removal from local history"
+            }
+          },
+          {
+            "id": "privacyTip",
+            "purpose": "Reassure first-time users",
+            "surface": "#FFF0E8",
+            "icon": "sparkles-outline",
+            "text": "Your saved photos will appear here after your first mark."
+          }
+        ]
+      },
+      "states": [
+        "default with example imagery",
+        "loading camera",
+        "loading library",
+        "saved history with ON DEVICE badge",
+        "permission error alert"
+      ]
+    },
+    "editor": {
+      "route": "/editor",
+      "purpose": "Compose the final marked image.",
+      "surface": "dark editor chrome with a light tool panel",
+      "layout": {
+        "topBar": {
+          "background": "#111C2F",
+          "elements": [
+            {
+              "type": "iconButton",
+              "icon": "x",
+              "action": "go back"
+            },
+            {
+              "type": "eyebrow",
+              "text": "EDITOR"
+            },
+            {
+              "type": "title",
+              "text": "Mark the detail"
+            },
+            {
+              "type": "primaryButton",
+              "text": "Save",
+              "icon": "check"
+            }
+          ]
+        },
+        "canvas": {
+          "purpose": "Photo and annotation layer",
+          "marginHorizontal": 12,
+          "radius": 22,
+          "minHeight": 330,
+          "imageFit": "contain",
+          "hint": {
+            "point": "Tap a point to mark it",
+            "rectangle": "Drag around an area",
+            "text": "Tap to place a note"
+          },
+          "watermark": {
+            "position": "bottom-right",
+            "icon": "scan-outline",
+            "text": "QUICK MARK",
+            "background": "rgba(10,18,32,0.42)"
+          }
+        },
+        "toolPanel": {
+          "surface": "#F7F9FC",
+          "radiusTop": 27,
+          "tools": [
+            {
+              "id": "point",
+              "icon": "radio-button-on",
+              "label": "Point",
+              "interaction": "tap image to create numbered marker"
+            },
+            {
+              "id": "rectangle",
+              "icon": "crop",
+              "label": "Area",
+              "interaction": "drag image to create rectangle"
+            },
+            {
+              "id": "text",
+              "icon": "type",
+              "label": "Note",
+              "interaction": "tap image to place text note"
+            }
+          ],
+          "selectedTool": "light blue surface with blue icon and label",
+          "selectedAnnotationActions": [
+            {
+              "icon": "trash-2",
+              "label": "Delete selected annotation"
+            }
+          ],
+          "footerActions": [
+            {
+              "icon": "award",
+              "label": "Watermark on/off"
+            },
+            {
+              "icon": "share-2",
+              "label": "Share",
+              "action": "share composed canvas"
+            }
+          ]
+        },
+        "noteComposer": {
+          "presentation": "bottom sheet",
+          "elements": [
+            {
+              "type": "title",
+              "variants": [
+                "Add a note",
+                "Edit note"
+              ]
+            },
+            {
+              "type": "textInput",
+              "placeholder": "e.g. Check this corner",
+              "maxLength": 80
+            },
+            {
+              "type": "primaryButton",
+              "variants": [
+                "Add note",
+                "Update note"
+              ]
+            }
+          ]
+        }
+      },
+      "annotationModel": {
+        "coordinateSpace": "normalized 0..1 relative to the editor canvas",
+        "types": [
+          {
+            "type": "point",
+            "required": [
+              "x",
+              "y",
+              "text",
+              "color"
+            ]
+          },
+          {
+            "type": "rectangle",
+            "required": [
+              "x",
+              "y",
+              "width",
+              "height",
+              "text",
+              "color"
+            ]
+          },
+          {
+            "type": "text",
+            "required": [
+              "x",
+              "y",
+              "text",
+              "color"
+            ]
+          }
+        ]
+      },
+      "states": [
+        "photo selected, no annotations",
+        "point annotation selected",
+        "rectangle being dragged",
+        "note composer open",
+        "saving",
+        "save success",
+        "save error",
+        "share sheet open"
+      ]
+    },
+    "settings": {
+      "route": "/settings",
+      "purpose": "Make watermark preferences visible and reassure users about privacy.",
+      "layout": {
+        "header": {
+          "backIcon": "arrow-left",
+          "title": "Settings"
+        },
+        "intro": {
+          "icon": "options-outline",
+          "title": "Your mark, your way.",
+          "body": "Keep the workflow light. Every photo and note stays on this device."
+        },
+        "groups": [
+          {
+            "label": "EDITOR DEFAULTS",
+            "items": [
+              {
+                "icon": "award",
+                "title": "Add watermark",
+                "description": "Add a subtle Quick Mark signature to saved images.",
+                "control": "switch"
+              }
+            ]
+          },
+          {
+            "label": "ABOUT",
+            "items": [
+              {
+                "type": "brandCard",
+                "title": "Quick Mark",
+                "body": "A faster way to point things out.",
+                "version": "MVP 1.0"
+              }
+            ]
+          }
+        ],
+        "privacyNote": "Photos are processed locally. Quick Mark does not upload your images."
+      }
+    }
+  },
+  "components": {
+    "iconography": {
+      "library": "@expo/vector-icons",
+      "preferredSet": [
+        "Feather",
+        "Ionicons"
+      ],
+      "rules": [
+        "Use icons instead of decorative text symbols.",
+        "Use consistent 16-25px icon sizing.",
+        "Use scan-outline as the primary Quick Mark brand motif."
+      ]
+    },
+    "touchTargets": {
+      "minimum": 44,
+      "primaryActionHeight": 110,
+      "iconButton": 42
+    },
+    "motion": {
+      "pressFeedback": "opacity 0.72-0.84 with subtle scale on image cards",
+      "navigation": "native slide from right",
+      "sheets": "bottom-sheet rise with native keyboard-safe positioning"
+    },
+    "accessibility": {
+      "requiredLabels": [
+        "Capture a photo",
+        "Choose a photo from your library",
+        "Open settings",
+        "Save marked photo",
+        "Share marked photo",
+        "Delete selected annotation",
+        "Toggle watermark"
+      ],
+      "contrast": "Use white text only over primary blue or dark editor surfaces.",
+      "keyboard": "Text note input must autofocus and support the Done action."
+    }
+  },
+  "assetReferences": [
+    {
+      "path": "artifacts/quick-mark/assets/images/icon.png",
+      "role": "app icon and splash mark"
+    },
+    {
+      "path": "artifacts/quick-mark/assets/images/sample-sneaker.jpg",
+      "role": "example recent-work image"
+    },
+    {
+      "path": "artifacts/quick-mark/assets/images/sample-desk.jpg",
+      "role": "example recent-work image"
+    }
+  ],
+  "aiRenderingPrompt": "Render Quick Mark as a polished touch-first mobile photo annotation app. It should feel fast, clear, friendly, confident, and privacy-conscious. Use the provided Inter typography and token palette. The home screen is a calm pale-blue and white surface with a bold electric-blue Capture action, a lighter Choose action, a compact hero message, and two photographic recent-work cards. The editor switches to deep navy chrome around a large photo canvas with bright red, yellow, or mint annotations, then returns to a rounded light tool panel. Avoid generic dashboards, avoid emojis, avoid cloud/account UI, and keep all actions accessible with large touch targets."
+}
