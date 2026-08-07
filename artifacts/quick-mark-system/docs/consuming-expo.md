@@ -36,6 +36,10 @@ import { useDesignSystemFonts } from "@workspace/quick-mark-system/hooks/use-fon
 Keep the root layout's existing SplashScreen gating around the shared font
 hook's `fontsLoaded` and `fontError` result.
 
+For this project, the shared native theme is already implemented in the
+package. Use `nativeTheme`, `useColors`, and `useDesignSystemFonts` directly;
+do not copy the token values into the Expo app.
+
 ## Native components
 
 Before writing screens, inventory the app's visual building blocks and add the

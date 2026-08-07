@@ -11,9 +11,12 @@ import {
 import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '@/hooks/useColors';
+import { useColors } from '@workspace/quick-mark-system/hooks/use-colors';
 import {
+  readLaunchMode,
   readWatermarkEnabled,
+  type LaunchMode,
+  writeLaunchMode,
   writeWatermarkEnabled,
 } from '@/lib/storage';
 
@@ -22,13 +25,17 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [watermarkEnabled, setWatermarkEnabled] = useState(true);
+  const [launchMode, setLaunchMode] = useState<LaunchMode>('normal');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void readWatermarkEnabled().then((value) => {
-      setWatermarkEnabled(value);
-      setLoading(false);
-    });
+    void Promise.all([readWatermarkEnabled(), readLaunchMode()]).then(
+      ([watermarkValue, launchValue]) => {
+        setWatermarkEnabled(watermarkValue);
+        setLaunchMode(launchValue);
+        setLoading(false);
+      },
+    );
   }, []);
 
   const styles = makeStyles(colors, insets.top, insets.bottom);
@@ -54,7 +61,7 @@ export default function SettingsScreen() {
           </View>
           <Text style={styles.title}>Your mark, your way.</Text>
           <Text style={styles.subtitle}>
-            Keep the workflow light. Every photo and note stays on this device.
+            Chụp, đánh dấu và chia sẻ nhanh. Ảnh và ghi chú luôn ở trên thiết bị.
           </Text>
         </View>
 
@@ -66,7 +73,7 @@ export default function SettingsScreen() {
           <View style={styles.settingCopy}>
             <Text style={styles.settingTitle}>Add watermark</Text>
             <Text style={styles.settingDescription}>
-              Add a subtle Quick Mark signature to saved images.
+              Add a subtle TikSnap signature to saved images.
             </Text>
           </View>
           {loading ? (
@@ -86,13 +93,52 @@ export default function SettingsScreen() {
           )}
         </View>
 
+        <Text style={styles.sectionLabel}>STARTUP</Text>
+        <View style={styles.modeCard}>
+          <View style={styles.modeCopy}>
+            <Text style={styles.settingTitle}>Open camera on launch</Text>
+            <Text style={styles.settingDescription}>
+              Quick start mở camera ngay khi TikSnap khởi chạy.
+            </Text>
+          </View>
+          <View style={styles.modeRow}>
+            {([
+              ['normal', 'Normal'],
+              ['quick-start', 'Quick start'],
+            ] as const).map(([value, label]) => (
+              <Pressable
+                key={value}
+                accessibilityLabel={`Use ${label} startup mode`}
+                testID={`launch-mode-${value}`}
+                onPress={() => {
+                  setLaunchMode(value);
+                  void writeLaunchMode(value);
+                }}
+                style={[
+                  styles.modeOption,
+                  launchMode === value && styles.modeOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.modeOptionText,
+                    launchMode === value && styles.modeOptionTextActive,
+                  ]}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
         <Text style={styles.sectionLabel}>ABOUT</Text>
         <View style={styles.aboutCard}>
           <View style={styles.mark}>
             <Ionicons name="scan-outline" size={24} color={colors.primaryForeground} />
           </View>
           <View style={styles.aboutCopy}>
-            <Text style={styles.aboutTitle}>Quick Mark</Text>
+            <Text style={styles.aboutTitle}>TikSnap</Text>
             <Text style={styles.aboutBody}>A faster way to point things out.</Text>
           </View>
           <Text style={styles.version}>MVP 1.0</Text>
@@ -101,7 +147,7 @@ export default function SettingsScreen() {
         <View style={styles.privacyRow}>
           <Feather name="shield" size={16} color={colors.mutedForeground} />
           <Text style={styles.privacyText}>
-            Photos are processed locally. Quick Mark does not upload your images.
+            Photos are processed locally. TikSnap does not upload your images.
           </Text>
         </View>
       </ScrollView>
@@ -183,6 +229,36 @@ function makeStyles(colors: ReturnType<typeof useColors>, top: number, bottom: n
       borderColor: colors.border,
       marginBottom: 31,
     },
+    modeCard: {
+      padding: 16,
+      borderRadius: 20,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 28,
+    },
+    modeCopy: { marginBottom: 14 },
+    modeRow: { flexDirection: 'row', gap: 8 },
+    modeOption: {
+      flex: 1,
+      minHeight: 42,
+      borderRadius: 13,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.muted,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modeOptionActive: {
+      backgroundColor: colors.secondary,
+      borderColor: colors.primary,
+    },
+    modeOptionText: {
+      color: colors.mutedForeground,
+      fontFamily: 'Inter_600SemiBold',
+      fontSize: 12,
+    },
+    modeOptionTextActive: { color: colors.primary },
     settingIcon: {
       width: 39,
       height: 39,

@@ -8,8 +8,11 @@ export type SavedImage = {
   notePreview?: string;
 };
 
-const SAVED_IMAGES_KEY = 'quick-mark.saved-images';
-const WATERMARK_KEY = 'quick-mark.watermark-enabled';
+const SAVED_IMAGES_KEY = 'tiksnap.saved-images';
+const WATERMARK_KEY = 'tiksnap.watermark-enabled';
+const LAUNCH_MODE_KEY = 'tiksnap.launch-mode';
+
+export type LaunchMode = 'quick-start' | 'normal';
 
 export async function readSavedImages(): Promise<SavedImage[]> {
   const raw = await AsyncStorage.getItem(SAVED_IMAGES_KEY);
@@ -46,4 +49,13 @@ export async function readWatermarkEnabled(): Promise<boolean> {
 
 export async function writeWatermarkEnabled(value: boolean): Promise<void> {
   await AsyncStorage.setItem(WATERMARK_KEY, String(value));
+}
+
+export async function readLaunchMode(): Promise<LaunchMode> {
+  const value = await AsyncStorage.getItem(LAUNCH_MODE_KEY);
+  return value === 'quick-start' ? 'quick-start' : 'normal';
+}
+
+export async function writeLaunchMode(value: LaunchMode): Promise<void> {
+  await AsyncStorage.setItem(LAUNCH_MODE_KEY, value);
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -16,9 +16,10 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useColors } from '@/hooks/useColors';
+import { useColors } from '@workspace/quick-mark-system/hooks/use-colors';
 import {
   deleteSavedImage,
+  readLaunchMode,
   readSavedImages,
   type SavedImage,
 } from '@/lib/storage';
@@ -54,6 +55,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
   const [busy, setBusy] = useState<'camera' | 'gallery' | null>(null);
+  const quickStartAttempted = useRef(false);
 
   const loadHistory = useCallback(async () => {
     setSavedImages(await readSavedImages());
@@ -95,7 +97,7 @@ export default function HomeScreen() {
       } catch {
         Alert.alert(
           mode === 'camera' ? 'Camera unavailable' : 'Library unavailable',
-          'Quick Mark could not access that source. Please check your device permissions and try again.',
+          'TikSnap could not access that source. Please check your device permissions and try again.',
         );
       } finally {
         setBusy(null);
@@ -103,6 +105,19 @@ export default function HomeScreen() {
     },
     [openEditor],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    void readLaunchMode().then((mode) => {
+      if (!cancelled && mode === 'quick-start' && !quickStartAttempted.current) {
+        quickStartAttempted.current = true;
+        void chooseImage('camera');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [chooseImage]);
 
   const recentItems = useMemo(
     () =>
@@ -135,7 +150,7 @@ export default function HomeScreen() {
       >
         <View style={styles.header}>
           <View>
-            <Text style={styles.eyebrow}>QUICK MARK</Text>
+            <Text style={styles.eyebrow}>TIKSNAP</Text>
             <Text style={styles.title}>Make the detail clear.</Text>
           </View>
           <Pressable
@@ -237,7 +252,7 @@ export default function HomeScreen() {
               }
               onLongPress={() => {
                 if ('saved' in item && item.saved) {
-                  Alert.alert('Remove from Quick Mark', 'This removes the item from local history.', [
+                  Alert.alert('Remove from TikSnap', 'This removes the item from local history.', [
                     { text: 'Cancel', style: 'cancel' },
                     {
                       text: 'Remove',

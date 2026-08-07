@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Quick Mark",
-    "slug": "quick-mark",
+    "name": "TikSnap",
+    "slug": "tiksnap",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "quick-mark",
+    "scheme": "tiksnap",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -32,7 +32,7 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Quick Mark needs access to save annotated photos to your library."
+          "photosPermission": "TikSnap needs access to save annotated photos to your library."
         }
       ]
     ],
