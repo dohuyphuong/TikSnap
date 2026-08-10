@@ -6,6 +6,7 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 
+/** Loads bundled Inter assets; callers must not block the initial UI on it. */
 export function useDesignSystemFonts() {
   return useFonts({
     Inter_400Regular,

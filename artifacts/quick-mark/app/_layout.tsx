@@ -24,15 +24,16 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useDesignSystemFonts();
+  // Start loading the bundled Inter family, but keep the app responsive if a
+  // browser rejects a font asset.  System text is used until it becomes ready.
+  useDesignSystemFonts();
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) return null;
+    // Do not block the app shell on remote/web font loading.  In a browser the
+    // observer can time out while offline, which previously left the user on
+    // Expo's error screen.  The UI uses platform fallbacks until fonts exist.
+    void SplashScreen.hideAsync();
+  }, []);
 
   return (
     <SafeAreaProvider>

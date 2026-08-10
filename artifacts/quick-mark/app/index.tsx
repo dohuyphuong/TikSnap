@@ -49,6 +49,17 @@ function formatDate(value: string): string {
   });
 }
 
+function sampleImageUri(source: ImageSourcePropType): string {
+  // react-native-web does not expose Image.resolveAssetSource. Metro's web
+  // asset module already contains the URL, whereas native still needs the
+  // React Native resolver.
+  if (Platform.OS === 'web') {
+    const webAsset = source as unknown as { uri?: string; default?: string };
+    return webAsset.uri ?? webAsset.default ?? '';
+  }
+  return Image.resolveAssetSource(source).uri;
+}
+
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -243,13 +254,7 @@ export default function HomeScreen() {
             <Pressable
               key={item.id}
               testID={`recent-${item.id}`}
-              onPress={() =>
-                openEditor(
-                  'uri' in item
-                    ? item.uri
-                    : Image.resolveAssetSource(item.source).uri,
-                )
-              }
+              onPress={() => openEditor('uri' in item ? item.uri : sampleImageUri(item.source))}
               onLongPress={() => {
                 if ('saved' in item && item.saved) {
                   Alert.alert('Remove from TikSnap', 'This removes the item from local history.', [
