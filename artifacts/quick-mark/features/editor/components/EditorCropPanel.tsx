@@ -1,8 +1,8 @@
-// src/components/PhotoEditorCrop.tsx
+// Crop controls for the TikSnap editor feature.
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 
-const PhotoEditorCrop: React.FC = () => {
+const EditorCropPanel: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Crop feature implementation */}
@@ -18,4 +18,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PhotoEditorCrop;
+export default EditorCropPanel;

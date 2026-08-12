@@ -1,9 +1,9 @@
-// src/components/PhotoEditorCleanUpInterface.tsx
+// Interactive cleanup mask editor for the TikSnap editor feature.
 import React, { useState } from 'react';
 import { Image, View, StyleSheet, TouchableOpacity, PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const PhotoEditorCleanUpInterface: React.FC<{ imageUri: string }> = ({ imageUri }) => {
+const CleanupMaskEditor: React.FC<{ imageUri: string }> = ({ imageUri }) => {
   const [strokeCoordinates, setStrokeCoordinates] = useState<number[][]>([]);
   const [brushSize, setBrushSize] = useState(20);
   const [isEraserMode, setIsEraserMode] = useState(false);
@@ -78,4 +78,4 @@ const styles = StyleSheet.create({
   sizeButton: { padding: 8 },
 });
 
-export default PhotoEditorCleanUpInterface;
+export default CleanupMaskEditor;

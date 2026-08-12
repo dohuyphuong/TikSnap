@@ -1,9 +1,9 @@
-// src/components/PhotoEditorCleanUp.tsx
+// Cleanup tool panel for the TikSnap editor feature.
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-const PhotoEditorCleanUp: React.FC<{ imageUri: string }> = ({ imageUri }) => {
+const CleanupPanel: React.FC<{ imageUri: string }> = ({ imageUri }) => {
   return (
     <GestureHandlerRootView style={styles.container}>
       {/* Render the image and drawing canvas here */}
@@ -19,4 +19,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PhotoEditorCleanUp;
+export default CleanupPanel;

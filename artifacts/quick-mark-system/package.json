@@ -27,7 +27,8 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "react-dom": ">=18"
+    "react-dom": ">=18",
+    "react-native": ">=0.81"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.0",

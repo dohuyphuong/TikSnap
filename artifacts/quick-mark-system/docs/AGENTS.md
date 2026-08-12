@@ -17,6 +17,9 @@ on it and import its theme and components directly.
 - `src/components/ui/` — the initial shadcn scaffold, exported as
   `./components/*`. Generated systems keep and theme it; Figma imports prune and
   restyle it; code imports replace it with the source component library.
+- `src/components/native/icon-button.tsx` — compact React Native icon action
+  material. It provides an accessible hit target and token-driven surface,
+  ghost, and primary variants.
 - `src/lib/` (`cn`) and `src/hooks/` — exported as `./lib/*` and `./hooks/*`.
 - `src/App.tsx` — the entry point for the living style guide.
 - `src/preview/DesignSystemBrowser.tsx` — the persistent grouped navigation,

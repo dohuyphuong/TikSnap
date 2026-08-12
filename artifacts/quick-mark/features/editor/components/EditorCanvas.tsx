@@ -1,9 +1,9 @@
-// src/components/PhotoEditorCanvas.tsx
+// Canvas material for the TikSnap editor feature.
 import React from 'react';
 import { Image, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-const PhotoEditorCanvas: React.FC<{ imageUri: string }> = ({ imageUri }) => {
+const EditorCanvas: React.FC<{ imageUri: string }> = ({ imageUri }) => {
   return (
     <GestureHandlerRootView style={styles.container}>
       {/* Render the image here */}
@@ -24,4 +24,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PhotoEditorCanvas;
+export default EditorCanvas;

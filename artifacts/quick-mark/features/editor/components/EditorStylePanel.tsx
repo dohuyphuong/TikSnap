@@ -1,8 +1,8 @@
-// src/components/PhotoEditorStyles.tsx
+// Style controls for the TikSnap editor feature.
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 
-const PhotoEditorStyles: React.FC = () => {
+const EditorStylePanel: React.FC = () => {
   return (
     <View style={styles.container}>
       {/* Styles feature implementation */}
@@ -18,4 +18,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PhotoEditorStyles;
+export default EditorStylePanel;
