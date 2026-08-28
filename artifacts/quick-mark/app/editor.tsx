@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
@@ -17,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { readWatermarkEnabled, writeSavedImage } from '@/lib/storage';
+import { readWatermarkEnabled, writeSavedImage, readEditorDraft, writeEditorDraft, clearEditorDraft } from '@/lib/storage';
 import { IconButton } from '@workspace/quick-mark-system/components/native/icon-button';
 import { useColors } from '@workspace/quick-mark-system/hooks/use-colors';
 import { useHistory } from '@/lib/historyManager';
@@ -96,6 +97,7 @@ export default function EditorScreen() {
     updateLayerData,
     selectLayer,
     selectedLayerId,
+    restore,
   } = useLayers();
   const [showLayerPanel, setShowLayerPanel] = useState(false);
   const colors = useColors();
@@ -123,9 +125,25 @@ export default function EditorScreen() {
   const [draft, setDraft] = useState<Box | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [captionBusy, setCaptionBusy] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [canvasPan, setCanvasPan] = useState({ x: 0, y: 0 });
+  const canvasPanStart = useRef({ x: 0, y: 0 });
+  const [textValue, setTextValue] = useState('Ghi chú');
+  const [textColor, setTextColor] = useState('#FFFFFF');
+  const [textShadow, setTextShadow] = useState(true);
+  const restoredDraft = useRef(false);
 
   useEffect(() => { void readWatermarkEnabled().then(setWatermarkEnabled); }, []);
+  useEffect(() => {
+    if (!uri) return;
+    void readEditorDraft(uri).then((draft) => { if (draft) restore(draft); restoredDraft.current = true; });
+  }, [uri, restore]);
+  useEffect(() => {
+    if (!uri || !restoredDraft.current) return;
+    const timer = setTimeout(() => { void writeEditorDraft(uri, { layers, selectedLayerId }); }, 350);
+    return () => clearTimeout(timer);
+  }, [uri, layers, selectedLayerId]);
 
   const frame = useMemo(() => {
     const { width: cw, height: ch } = canvasSize;
@@ -136,10 +154,16 @@ export default function EditorScreen() {
     return { x: (cw - width) / 2, y: (ch - height) / 2, width, height };
   }, [canvasSize, imageSize]);
 
-  const normalize = (x: number, y: number): Point => ({
-    x: clamp((x - frame.x) / frame.width),
-    y: clamp((y - frame.y) / frame.height),
-  });
+  // Touch coordinates are reported in the untransformed photo container,
+  // while the image is rendered with scale/translation. Convert them back to
+  // the original canvas before normalizing, otherwise strokes drift at 125%+.
+  const normalize = (screenX: number, screenY: number): Point => {
+    const centerX = canvasSize.width / 2;
+    const centerY = canvasSize.height / 2;
+    const x = centerX + (screenX - canvasPan.x - centerX) / zoom;
+    const y = centerY + (screenY - canvasPan.y - centerY) / zoom;
+    return { x: clamp((x - frame.x) / frame.width), y: clamp((y - frame.y) / frame.height) };
+  };
 
   const suggestForPoint = (point: Point): Suggestion[] => {
     const zone = point.y < 0.33 ? 'Khoảnh khắc đáng nhớ' : point.y > 0.66 ? 'Một ngày thật tuyệt' : 'Điều làm mình mỉm cười';
@@ -169,15 +193,29 @@ export default function EditorScreen() {
       Alert.alert('Đã sao chép gợi ý', suggestion.value);
     }
   };
+  const requestAiCaption = async () => {
+    const base = process.env.EXPO_PUBLIC_API_URL || '';
+    if (!base) { Alert.alert('AI caption', 'Hãy cấu hình EXPO_PUBLIC_API_URL để bật AI Vision.'); return; }
+    setCaptionBusy(true);
+    try {
+      const response = await fetch(`${base.replace(/\/$/, '')}/api/caption`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ image: uri }) });
+      const result = await response.json() as { text?: string; error?: string };
+      if (!response.ok) throw new Error(result.error || 'AI request failed');
+      if (result.text) { setSuggestions([{ kind: 'text', value: result.text }]); Alert.alert('Caption từ AI', result.text); }
+    } catch (error) { Alert.alert('Không thể tạo caption', error instanceof Error ? error.message : 'Vui lòng thử lại.'); } finally { setCaptionBusy(false); }
+  };
 
   const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => tool === 'markup',
-    onMoveShouldSetPanResponder: () => tool === 'markup',
+    onStartShouldSetPanResponder: () => tool === 'markup' || zoom > 1,
+    onMoveShouldSetPanResponder: () => tool === 'markup' || zoom > 1,
     onPanResponderGrant: event => {
-      if (isComparing || tool !== 'markup') return;
+      if (isComparing) return;
+      if (zoom > 1 && tool !== 'markup') { canvasPanStart.current = canvasPan; gestureStart.current = { x: event.nativeEvent.locationX, y: event.nativeEvent.locationY }; return; }
+      if (tool !== 'markup') return;
       triggerSelection();
       const { locationX, locationY } = event.nativeEvent;
-      if (locationX < frame.x || locationX > frame.x + frame.width || locationY < frame.y || locationY > frame.y + frame.height) return;
+      const imagePoint = normalize(locationX, locationY);
+      if (imagePoint.x <= 0 || imagePoint.x >= 1 || imagePoint.y <= 0 || imagePoint.y >= 1) return;
       gestureStart.current = { x: locationX, y: locationY };
       if (markupTool === 'pen') {
         const id = makeId();
@@ -188,6 +226,7 @@ export default function EditorScreen() {
     },
     onPanResponderMove: event => {
       const { locationX, locationY } = event.nativeEvent;
+      if (tool !== 'markup' && zoom > 1) { setCanvasPan({ x: canvasPanStart.current.x + locationX - gestureStart.current?.x!, y: canvasPanStart.current.y + locationY - gestureStart.current?.y! }); return; }
       if (markupTool === 'pen' && strokeId.current) {
         const point = normalize(locationX, locationY);
         const previous = strokePoints.current[strokePoints.current.length - 1];
@@ -215,7 +254,7 @@ export default function EditorScreen() {
       setDraft(null);
     },
     onPanResponderTerminate: () => { strokeId.current = null; strokePoints.current = []; gestureStart.current = null; setDraft(null); },
-  }), [tool, markupTool, color, strokeWidth, frame, isComparing, layers.length, addLayer, updateLayerData]);
+  }), [tool, markupTool, color, strokeWidth, frame, isComparing, layers.length, addLayer, updateLayerData, zoom, canvasPan, canvasSize]);
 
   const undoLast = () => { undo(); triggerImpact(); };
   const redoLast = () => { redo(); triggerImpact(); };
@@ -245,6 +284,7 @@ export default function EditorScreen() {
         annotationCount: layers.length,
         notePreview: `${layers.length || 'No'} mark${layers.length === 1 ? '' : 's'}`,
       });
+      await clearEditorDraft(uri);
       await Clipboard.setImageAsync(output);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/');
@@ -292,7 +332,7 @@ export default function EditorScreen() {
           <Image
             source={{ uri }}
             resizeMode="contain"
-            style={[StyleSheet.absoluteFill, { transform: [{ scale: zoom }] }]}
+            style={[StyleSheet.absoluteFill, { transform: [{ translateX: canvasPan.x }, { translateY: canvasPan.y }, { scale: zoom }] }]}
             onLoad={event => {
               const source = event.nativeEvent?.source;
               if (source?.width && source?.height) {
@@ -307,7 +347,7 @@ export default function EditorScreen() {
             </>
       )}
         </Pressable>
-        {!isComparing && <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { transform: [{ scale: zoom }] }]}><EditorCanvas frame={frame} canvasSize={canvasSize} layers={layers} updateLayerData={updateLayerData} selectLayer={selectLayer} selectedLayerId={selectedLayerId} deleteLayer={deleteLayer} /></View>}
+        {!isComparing && <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { transform: [{ translateX: canvasPan.x }, { translateY: canvasPan.y }, { scale: zoom }] }]}><EditorCanvas frame={frame} canvasSize={canvasSize} layers={layers} updateLayerData={updateLayerData} selectLayer={selectLayer} selectedLayerId={selectedLayerId} deleteLayer={deleteLayer} /></View>}
         {selectedPoint && !isComparing && tool !== 'markup' ? (
           <View pointerEvents="none" style={[styles.selectionMarker, { left: frame.x + selectedPoint.x * frame.width - 13, top: frame.y + selectedPoint.y * frame.height - 13 }]}><Ionicons name="sparkles" size={22} color="#FFD60A" /></View>
         ) : null}
@@ -319,7 +359,7 @@ export default function EditorScreen() {
       {suggestions.length > 0 && tool !== 'markup' ? (
         <ToolPanel>
           <View style={styles.suggestionPanel}>
-            <View style={styles.suggestionTitle}><Ionicons name="sparkles" size={16} color="#FFD60A" /><Text style={styles.suggestionTitleText}>Gợi ý cho vùng đã chọn</Text><Pressable onPress={() => setSuggestions([])}><Ionicons name="close" size={18} color="#A7A7AA" /></Pressable></View>
+            <View style={styles.suggestionTitle}><Ionicons name="sparkles" size={16} color="#FFD60A" /><Text style={styles.suggestionTitleText}>Gợi ý cho vùng đã chọn</Text><Pressable onPress={requestAiCaption} disabled={captionBusy}><Text style={styles.aiButton}>{captionBusy ? '...' : 'AI'}</Text></Pressable><Pressable onPress={() => setSuggestions([])}><Ionicons name="close" size={18} color="#A7A7AA" /></Pressable></View>
             <View style={styles.suggestionRow}>{suggestions.map((item) => <Pressable key={`${item.kind}-${item.value}`} onPress={() => applySuggestion(item)} style={styles.suggestionChip}><Text style={styles.suggestionKind}>{item.kind === 'text' ? 'TEXT' : item.kind === 'ticker' ? 'TICKER' : 'EMOJI'}</Text><Text style={styles.suggestionValue}>{item.value}</Text></Pressable>)}</View>
           </View>
         </ToolPanel>
@@ -342,15 +382,19 @@ export default function EditorScreen() {
                </Pressable>
              ))}
           </View>
+          <View style={styles.textEditorRow}><TextInput value={textValue} onChangeText={setTextValue} placeholder="Nhập chữ trên ảnh" placeholderTextColor="#888" style={styles.textInput} /><Pressable onPress={() => { if (!textValue.trim()) return; addLayer({ id: makeId(), type: 'text', data: { text: textValue.trim(), x: 0.5, y: 0.5, color: textColor, fontSize: 24, shadow: textShadow }, visible: true, zIndex: layers.length }); }} style={styles.addTextButton}><Text style={styles.addTextLabel}>Thêm chữ</Text></Pressable></View>
+          <View style={styles.textOptions}><Text style={styles.optionLabel}>Màu</Text>{COLORS.slice(0, 5).map(item => <Pressable key={item} onPress={() => setTextColor(item)} style={[styles.colorDot, { backgroundColor: item }, textColor === item && styles.colorSelected]} />)}<Pressable onPress={() => setTextShadow(value => !value)}><Text style={styles.shadowToggle}>{textShadow ? 'Bóng: bật' : 'Bóng: tắt'}</Text></Pressable></View>
         </ToolPanel>
       ) : tool === 'filter' ? (
         <ToolPanel>
           <View style={styles.filterPanel}>
+            {FILTERS.map(item => <Pressable key={item.id} onPress={() => setFilter(item.id)} style={[styles.filterButton, filter === item.id && styles.filterButtonActive]}><View style={[styles.filterSwatch, { backgroundColor: item.overlay === 'transparent' ? '#777' : item.overlay }]} /><Text style={styles.filterLabel}>{item.label}</Text></Pressable>)}
           </View>
         </ToolPanel>
       ) : (
         <ToolPanel>
           <View style={styles.adjustments}>
+            {ADJUSTMENTS.map(item => <Pressable key={item.id} onPress={() => { setAdjustment(item.id); setValue(item.id === 'auto' ? .5 : value); }} style={[styles.adjustButton, adjustment === item.id && styles.adjustButtonActive]}><Ionicons name={item.icon as any} size={20} color="#FFF" /><Text style={styles.adjustLabel}>{item.label}</Text></Pressable>)}
           </View>
         </ToolPanel>
       )}
@@ -369,10 +413,13 @@ const styles = StyleSheet.create({
   photoArea: { flex: 1, minHeight: 240, marginHorizontal: 28, marginBottom: 10 }, watermark: { position: 'absolute', right: 10, bottom: 10, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 5, backgroundColor: 'rgba(0,0,0,.42)' }, watermarkText: { color: '#FFF', fontSize: 8, letterSpacing: 1.1, fontWeight: '800' }, adjustments: { height: 76, flexDirection: 'row', justifyContent: 'center', gap: 25, alignItems: 'center' },
   bottomDock: { alignSelf: 'center', minHeight: 58, borderRadius: 29, borderWidth: StyleSheet.hairlineWidth, borderColor: '#343436', backgroundColor: '#171718', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 8 }, dockItem: { minWidth: 60, height: 48, alignItems: 'center', justifyContent: 'center', gap: 1 }, dockText: { color: '#A7A7AA', fontSize: 10, fontWeight: '600' }, dockTextActive: { color: '#FFF' }, selectionDot: { position: 'absolute', top: 1, width: 5, height: 5, borderRadius: 3, backgroundColor: '#FFD60A' },
   markupPanel: { gap: 6 }, markupTools: { flexDirection: 'row', justifyContent: 'center', gap: 8 }, markupButton: { width: 33, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, markupButtonActive: { backgroundColor: '#3A3A3C' }, colors: { flexDirection: 'row', justifyContent: 'center', gap: 10 }, colorDot: { width: 18, height: 18, borderRadius: 10 }, colorSelected: { borderWidth: 2, borderColor: '#8E8E93' }, widths: { flexDirection: 'row', justifyContent: 'center', gap: 8 }, widthButton: { width: 28, height: 20, alignItems: 'center', justifyContent: 'center', borderRadius: 10 }, widthActive: { backgroundColor: '#3A3A3C' },
-  filterPanel: { height: 100, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 14 },
+  filterPanel: { height: 100, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10 }, filterButton: { alignItems: 'center', gap: 5, padding: 5, borderRadius: 10 }, filterButtonActive: { backgroundColor: '#3A3A3C' }, filterSwatch: { width: 38, height: 38, borderRadius: 10 }, filterLabel: { color: '#FFF', fontSize: 10 },
   stickerPanel: { height: 60, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20 },
+  textEditorRow: { flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 }, textInput: { flex: 1, height: 38, borderRadius: 10, backgroundColor: '#29292C', color: '#FFF', paddingHorizontal: 10 }, addTextButton: { height: 38, borderRadius: 10, backgroundColor: '#2A4EA0', paddingHorizontal: 12, justifyContent: 'center' }, addTextLabel: { color: '#FFF', fontWeight: '700', fontSize: 12 }, textOptions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }, optionLabel: { color: '#AAA', fontSize: 11 }, shadowToggle: { color: '#FFD60A', fontSize: 11, marginLeft: 5 },
+  adjustButton: { alignItems: 'center', gap: 4, padding: 7, borderRadius: 10 }, adjustButtonActive: { backgroundColor: '#3A3A3C' }, adjustLabel: { color: '#FFF', fontSize: 10 },
   blurPanel: { marginHorizontal: 8, marginBottom: 5, borderRadius: 20, overflow: 'hidden', padding: 10 },
   selectionMarker: { position: 'absolute', width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,.58)' },
   suggestionPanel: { gap: 9 }, suggestionTitle: { flexDirection: 'row', alignItems: 'center', gap: 7 }, suggestionTitleText: { flex: 1, color: '#FFF', fontWeight: '700', fontSize: 13 }, suggestionRow: { flexDirection: 'row', gap: 7 }, suggestionChip: { flex: 1, minHeight: 46, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 6, backgroundColor: '#29292C' }, suggestionKind: { color: '#FFD60A', fontSize: 9, fontWeight: '800', letterSpacing: .5 }, suggestionValue: { color: '#FFF', fontSize: 12, marginTop: 3 },
+  aiButton: { color: '#FFD60A', fontWeight: '800', fontSize: 11, paddingHorizontal: 5 },
   zoomControls: { position: 'absolute', zIndex: 20, top: 12, right: 8, height: 34, borderRadius: 17, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(20,20,22,.82)', borderWidth: StyleSheet.hairlineWidth, borderColor: '#555' }, zoomButton: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' }, zoomValue: { minWidth: 48, alignItems: 'center' }, zoomText: { color: '#FFF', fontSize: 11, fontWeight: '700' },
 });

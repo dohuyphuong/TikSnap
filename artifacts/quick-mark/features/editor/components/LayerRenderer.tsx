@@ -1,6 +1,6 @@
 import React from 'react';
 import { Path, Rect, Text as SvgText } from 'react-native-svg';
-import { Layer, StrokeData, BoxData, StickerData } from '../types';
+import { Layer, StrokeData, BoxData, StickerData, TextData } from '../types';
 
 interface LayerRendererProps {
   layer: Layer;
@@ -58,6 +58,10 @@ export const LayerRenderer: React.FC<LayerRendererProps> = ({ layer, frame }) =>
           {data.uri}
         </SvgText>
       );
+    }
+    case 'text': {
+      const data = layer.data as TextData;
+      return <SvgText x={frame.x + data.x * frame.width} y={frame.y + data.y * frame.height} fill={data.color ?? '#FFFFFF'} fontSize={data.fontSize ?? 24} fontWeight="700" textAnchor="middle" alignmentBaseline="middle" stroke={data.shadow ? '#000000' : 'none'} strokeWidth={data.shadow ? 3 : 0} transform={`rotate(${data.rotation ?? 0} ${frame.x + data.x * frame.width} ${frame.y + data.y * frame.height})`}>{data.text}</SvgText>;
     }
     default:
       return null;

@@ -41,6 +41,14 @@ const sampleImages: Array<{
   },
 ];
 
+const dailyIdeas = [
+  { title: 'Make the detail clear.', body: 'Khoanh vùng điều quan trọng và chia sẻ ngay trong vài giây.', prompt: 'Mẹo hôm nay: dùng màu tương phản để nét đánh dấu nổi bật.' },
+  { title: 'Tell a tiny story.', body: 'Thêm một dòng chữ, ticker hoặc emoji để bức ảnh có thêm cảm xúc.', prompt: 'Mẹo hôm nay: chạm vào ảnh để nhận gợi ý caption và hashtag.' },
+  { title: 'See it your way.', body: 'Phóng to, xoay, kéo và sắp xếp mọi chi tiết theo cách của bạn.', prompt: 'Mẹo hôm nay: dùng hai ngón tay để zoom khi đánh dấu chi tiết nhỏ.' },
+  { title: 'One photo. More meaning.', body: 'Biến một khoảnh khắc bình thường thành thông điệp dễ nhớ.', prompt: 'Mẹo hôm nay: thử thêm một emoji tại điểm bạn muốn người xem chú ý.' },
+  { title: 'Mark what matters.', body: 'Làm nổi bật đúng điểm cần nhìn, không cần thêm lời giải thích dài.', prompt: 'Mẹo hôm nay: giữ layer để kéo, xoay hoặc thay đổi kích thước.' },
+];
+
 function formatDate(value: string): string {
   const date = new Date(value);
   return date.toLocaleDateString(undefined, {
@@ -66,6 +74,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [savedImages, setSavedImages] = useState<SavedImage[]>([]);
   const [busy, setBusy] = useState<'camera' | 'gallery' | null>(null);
+  const dailyIdea = useMemo(() => dailyIdeas[Math.floor(Date.now() / 86400000) % dailyIdeas.length], []);
   const quickStartAttempted = useRef(false);
 
   const loadHistory = useCallback(async () => {
@@ -162,7 +171,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.eyebrow}>TIKSNAP</Text>
-            <Text style={styles.title}>Make the detail clear.</Text>
+            <Text style={styles.title}>{dailyIdea.title}</Text>
           </View>
           <Pressable
             accessibilityLabel="Open settings"
@@ -184,14 +193,12 @@ export default function HomeScreen() {
               <Ionicons name="scan-outline" size={23} color={colors.primary} />
             </View>
             <Text style={styles.heroTitle}>Point it out.</Text>
-            <Text style={styles.heroBody}>
-              Capture a moment, mark what matters, and send it in seconds.
-            </Text>
+            <Text style={styles.heroBody}>{dailyIdea.body}</Text>
           </View>
           <View style={styles.heroMeta}>
             <View style={styles.metaItem}>
               <Feather name="zap" size={14} color={colors.primary} />
-              <Text style={styles.metaText}>Fast by design</Text>
+              <Text style={styles.metaText}>Daily inspiration</Text>
             </View>
             <View style={styles.metaItem}>
               <Feather name="lock" size={14} color={colors.primary} />
@@ -296,6 +303,10 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : null}
+        <View style={styles.dailyPrompt}>
+          <Ionicons name="bulb-outline" size={18} color={colors.primary} />
+          <Text style={styles.dailyPromptText}>{dailyIdea.prompt}</Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -515,6 +526,8 @@ function makeStyles(colors: ReturnType<typeof useColors>, top: number, bottom: n
       fontSize: 12,
       lineHeight: 18,
     },
+    dailyPrompt: { flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, padding: 14, borderRadius: 16, marginTop: 12 },
+    dailyPromptText: { flex: 1, color: colors.mutedForeground, fontFamily: 'Inter_500Medium', fontSize: 12, lineHeight: 18 },
     pressed: { opacity: 0.76 },
   });
 }

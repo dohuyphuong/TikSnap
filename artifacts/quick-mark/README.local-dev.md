@@ -65,6 +65,16 @@ npm run dev:device
 
 QR tunnel phải có dạng `exp://...ngrok...`, không phải `exp://127.0.0.1:8081`.
 
+Nếu tunnel báo `remote gone away`, dừng tiến trình và thử LAN:
+
+```bash
+npm run dev:lan
+```
+
+Điện thoại và máy chạy Dev Container phải ở cùng Wi-Fi; QR đúng sẽ có dạng
+`exp://192.168.x.x:8081`. Lệnh `npm run dev:device` hiện tự chuyển sang LAN nếu
+tunnel thất bại.
+
 Quét QR code do Expo hiển thị bằng Expo Go. Tunnel cần kết nối Internet và có
 thể chậm hơn LAN.
 

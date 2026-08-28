@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { EditorState } from '../features/editor/types';
 
 export type SavedImage = {
   id: string;
@@ -11,6 +12,7 @@ export type SavedImage = {
 const SAVED_IMAGES_KEY = 'tiksnap.saved-images';
 const WATERMARK_KEY = 'tiksnap.watermark-enabled';
 const LAUNCH_MODE_KEY = 'tiksnap.launch-mode';
+const EDITOR_DRAFT_KEY = 'tiksnap.editor-draft';
 
 export type LaunchMode = 'quick-start' | 'normal';
 
@@ -58,4 +60,23 @@ export async function readLaunchMode(): Promise<LaunchMode> {
 
 export async function writeLaunchMode(value: LaunchMode): Promise<void> {
   await AsyncStorage.setItem(LAUNCH_MODE_KEY, value);
+}
+
+export async function writeEditorDraft(uri: string, state: EditorState): Promise<void> {
+  await AsyncStorage.setItem(EDITOR_DRAFT_KEY, JSON.stringify({ uri, state, updatedAt: Date.now() }));
+}
+
+export async function readEditorDraft(uri: string): Promise<EditorState | null> {
+  try {
+    const raw = await AsyncStorage.getItem(EDITOR_DRAFT_KEY);
+    if (!raw) return null;
+    const draft = JSON.parse(raw) as { uri?: string; state?: EditorState };
+    return draft.uri === uri && draft.state ? draft.state : null;
+  } catch { return null; }
+}
+
+export async function clearEditorDraft(uri: string): Promise<void> {
+  const raw = await AsyncStorage.getItem(EDITOR_DRAFT_KEY);
+  if (!raw) return;
+  try { if ((JSON.parse(raw) as { uri?: string }).uri === uri) await AsyncStorage.removeItem(EDITOR_DRAFT_KEY); } catch { /* ignore corrupt drafts */ }
 }

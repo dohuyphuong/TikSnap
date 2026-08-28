@@ -55,6 +55,8 @@ export function useLayers() {
     }));
   }, [setState]);
 
+  const restore = useCallback((next: EditorState) => setState(next), [setState]);
+
   return {
     layers,
     selectedLayerId: state.selectedLayerId,
@@ -68,5 +70,6 @@ export function useLayers() {
     redo,
     canUndo,
     canRedo,
+    restore,
   };
 }

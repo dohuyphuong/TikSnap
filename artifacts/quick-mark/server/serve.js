@@ -130,6 +130,24 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url || '/', `http://${req.headers.host}`);
   let pathname = url.pathname;
 
+  if (req.method === 'POST' && pathname === '/api/caption') {
+    let body = '';
+    req.setEncoding('utf8');
+    req.on('data', (chunk) => { body += chunk; if (body.length > 8_000_000) req.destroy(); });
+    req.on('end', async () => {
+      if (!process.env.OPENAI_API_KEY) { res.writeHead(503, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: 'AI caption is not configured' })); return; }
+      try {
+        const { image } = JSON.parse(body);
+        if (typeof image !== 'string' || (!image.startsWith('data:image/') && !image.startsWith('https://'))) throw new Error('Invalid image');
+        const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: JSON.stringify({ model: process.env.OPENAI_VISION_MODEL || 'gpt-4o-mini', input: [{ role: 'user', content: [{ type: 'input_text', text: 'Describe this image in one concise Vietnamese caption and suggest 3 short hashtags. Return JSON with caption and hashtags.' }, { type: 'input_image', image_url: image }]}], max_output_tokens: 180 }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error?.message || 'AI request failed');
+        res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ text: result.output_text || '' }));
+      } catch (error) { res.writeHead(400, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: error.message })); }
+    });
+    return;
+  }
+
   if (basePath && pathname.startsWith(basePath)) {
     pathname = pathname.slice(basePath.length) || '/';
   }

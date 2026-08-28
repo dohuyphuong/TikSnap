@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Pressable, Text } from 'react-native';
+import { View, StyleSheet, Pressable, Text, PanResponder } from 'react-native';
 import Svg from 'react-native-svg';
 import { LayerRenderer } from './LayerRenderer';
 import { DraggableLayer } from './DraggableLayer';
@@ -15,6 +15,11 @@ interface EditorCanvasProps {
   deleteLayer?: (id: string) => void;
 }
 
+const ResizeHandle = ({ corner, onResize }: { corner: string; onResize: (dx: number, dy: number) => void }) => {
+  const responder = React.useMemo(() => PanResponder.create({ onStartShouldSetPanResponder: () => true, onMoveShouldSetPanResponder: () => true, onPanResponderRelease: (_, g) => onResize(g.dx, g.dy) }), [onResize]);
+  return <View {...responder.panHandlers} style={[styles.handle, corner === 'nw' ? styles.handleNW : corner === 'ne' ? styles.handleNE : corner === 'sw' ? styles.handleSW : styles.handleSE]} />;
+};
+
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({ frame, canvasSize = { width: 0, height: 0 }, layers = [], updateLayerData = () => {}, selectLayer = () => {}, selectedLayerId = null, deleteLayer = () => {} }) => {
 
   return (
@@ -29,9 +34,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({ frame, canvasSize = 
         {layers.filter(l => l.type === 'stroke').map((layer) => {
           const points = layer.data as { points: { x: number; y: number }[] };
           const anchor = points.points[Math.floor(points.points.length / 2)] ?? { x: 0.5, y: 0.5 };
-          return <View key={`select-${layer.id}`} pointerEvents="auto" onTouchStart={() => selectLayer(layer.id)} style={[styles.strokeTarget, { left: frame.x + anchor.x * frame.width - 24, top: frame.y + anchor.y * frame.height - 24, borderColor: selectedLayerId === layer.id ? '#FFD60A' : 'transparent' }]} />;
+          const dragLayer = { ...layer, data: { x: anchor.x, y: anchor.y } } as Layer;
+          return <DraggableLayer key={`select-${layer.id}`} layer={dragLayer} canvasSize={canvasSize} onSelect={selectLayer} onDragEnd={(id, x, y) => { const dx = x - anchor.x; const dy = y - anchor.y; updateLayerData(id, { points: points.points.map(point => ({ x: Math.max(0, Math.min(1, point.x + dx)), y: Math.max(0, Math.min(1, point.y + dy)) })) }); }}><View pointerEvents="none" style={[styles.strokeTarget, { left: frame.x + anchor.x * frame.width - 24, top: frame.y + anchor.y * frame.height - 24, borderColor: selectedLayerId === layer.id ? '#FFD60A' : 'transparent' }]} />{selectedLayerId === layer.id ? <Pressable accessibilityLabel="Xóa nét vẽ" onPress={() => deleteLayer(layer.id)} style={styles.deleteButton}><Text style={styles.deleteText}>×</Text></Pressable> : null}</DraggableLayer>;
         })}
-        {layers.filter(l => l.type === 'sticker' || l.type === 'box').map((layer) => (
+        {layers.filter(l => l.type === 'sticker' || l.type === 'box' || l.type === 'text').map((layer) => (
           <DraggableLayer
             key={`drag-${layer.id}`}
             layer={layer}
@@ -52,7 +58,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({ frame, canvasSize = 
               ]}
             />
             {selectedLayerId === layer.id ? <Pressable accessibilityLabel="Xóa đối tượng" onPress={() => deleteLayer(layer.id)} style={styles.deleteButton}><Text style={styles.deleteText}>×</Text></Pressable> : null}
-            {selectedLayerId === layer.id ? <View pointerEvents="none" style={styles.selectionFrame}><View style={[styles.handle, styles.handleNW]} /><View style={[styles.handle, styles.handleNE]} /><View style={[styles.handle, styles.handleSW]} /><View style={[styles.handle, styles.handleSE]} /></View> : null}
+            {selectedLayerId === layer.id && layer.type === 'box' ? <View style={styles.selectionFrame}>{['nw', 'ne', 'sw', 'se'].map(corner => <ResizeHandle key={corner} corner={corner} onResize={(dx, dy) => { const data = layer.data as any; const dw = dx / Math.max(frame.width, 1); const dh = dy / Math.max(frame.height, 1); const left = corner.includes('w'); const top = corner.includes('n'); const width = Math.max(0.04, data.width + (left ? -dw : dw)); const height = Math.max(0.04, data.height + (top ? -dh : dh)); const x = left ? data.x + data.width - width : data.x; const y = top ? data.y + data.height - height : data.y; updateLayerData(layer.id, { x: Math.max(0, x), y: Math.max(0, y), width, height }); }} />)}</View> : null}
           </DraggableLayer>
         ))}
       </View>

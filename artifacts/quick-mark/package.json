@@ -8,7 +8,7 @@
     "dev:localhost": "npm_config_user_agent=npm/10 expo start --localhost --port ${PORT:-8081}",
     "dev:lan": "npm_config_user_agent=npm/10 expo start --lan --port ${PORT:-8081}",
     "dev:tunnel": "npm_config_user_agent=npm/10 expo start --tunnel --port ${PORT:-8081}",
-    "dev:device": "npm_config_user_agent=npm/10 expo start --tunnel --port ${PORT:-8081}",
+    "dev:device": "npm_config_user_agent=npm/10 sh -c 'expo start --tunnel --port ${PORT:-8081} || exec expo start --lan --port ${PORT:-8081}'",
     "build": "node scripts/build.js",
     "build:local": "EXPO_PUBLIC_DOMAIN=localhost:3000 EXPO_PUBLIC_PROTOCOL=http node scripts/build.js",
     "serve": "node server/serve.js",

@@ -18,6 +18,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({ onClose }) => {
       case 'stroke': return 'pencil';
       case 'box': return 'square-outline';
       case 'sticker': return 'happy-outline';
+      case 'text': return 'text-outline';
       default: return 'layers-outline';
     }
   };

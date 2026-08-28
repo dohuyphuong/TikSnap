@@ -1,4 +1,4 @@
-export type LayerType = 'stroke' | 'box' | 'sticker';
+export type LayerType = 'stroke' | 'box' | 'sticker' | 'text';
 
 export interface BaseLayerData {
   x: number;
@@ -23,6 +23,14 @@ export interface BoxData extends BaseLayerData {
 
 export interface StickerData extends BaseLayerData {
   uri: string;
+}
+
+export interface TextData extends BaseLayerData {
+  text: string;
+  color?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  shadow?: boolean;
 }
 
 export interface Layer {
