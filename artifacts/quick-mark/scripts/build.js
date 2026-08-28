@@ -69,10 +69,10 @@ function getDeploymentDomain() {
     return stripProtocol(process.env.EXPO_PUBLIC_DOMAIN);
   }
 
-  console.error(
-    'ERROR: No deployment domain found. Set REPLIT_INTERNAL_APP_DOMAIN, REPLIT_DEV_DOMAIN, or EXPO_PUBLIC_DOMAIN',
-  );
-  process.exit(1);
+  // A local build should be usable without Replit-specific environment vars.
+  // Override with EXPO_PUBLIC_DOMAIN for a public/tunnel deployment.
+  console.warn('No deployment domain configured; using http://localhost:3000');
+  return 'localhost:3000';
 }
 
 function prepareDirectories(timestamp) {
@@ -140,6 +140,7 @@ async function startMetro(expoPublicDomain, expoPublicReplId) {
   console.log(`Setting EXPO_PUBLIC_DOMAIN=${expoPublicDomain}`);
   const env = {
     ...process.env,
+    npm_config_user_agent: 'npm/10',
     EXPO_PUBLIC_DOMAIN: expoPublicDomain,
     EXPO_PUBLIC_REPL_ID: expoPublicReplId,
   };
@@ -148,9 +149,12 @@ async function startMetro(expoPublicDomain, expoPublicReplId) {
     console.log(`Setting EXPO_PUBLIC_REPL_ID=${expoPublicReplId}`);
   }
 
+  const expoBinary = process.platform === 'win32'
+    ? path.join(projectRoot, 'node_modules', '.bin', 'expo.cmd')
+    : path.join(projectRoot, 'node_modules', '.bin', 'expo');
   metroProcess = spawn(
-    'pnpm',
-    ['exec', 'expo', 'start', '--no-dev', '--minify', '--localhost'],
+    expoBinary,
+    ['start', '--no-dev', '--minify', '--localhost', '--port', process.env.METRO_PORT || '8081'],
     {
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: false,
@@ -528,7 +532,8 @@ async function main() {
 
   const domain = getDeploymentDomain();
   const expoPublicReplId = getExpoPublicReplId();
-  const baseUrl = `https://${domain}`;
+  const protocol = process.env.EXPO_PUBLIC_PROTOCOL || (domain.startsWith('localhost') ? 'http' : 'https');
+  const baseUrl = `${protocol}://${domain}`;
   const timestamp = `${Date.now()}-${process.pid}`;
 
   prepareDirectories(timestamp);

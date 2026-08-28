@@ -9,7 +9,7 @@ const LegacyPhotoEditorScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <EditorHeader />
-      <EditorCanvas imageUri="your_image_uri_here" />
+      <EditorCanvas frame={{ x: 0, y: 0, width: 0, height: 0 }} canvasSize={{ width: 0, height: 0 }} />
       <EditorToolbar activeTool="cleanup" onToolSelect={() => {}} />
     </View>
   );

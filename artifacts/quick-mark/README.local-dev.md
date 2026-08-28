@@ -35,6 +35,13 @@ PORT=8082 pnpm --filter @workspace/quick-mark run dev:localhost
 Sau đó forward port `8082` trong tab **Ports** của VS Code. Việc này không sửa
 file cấu hình nào trong repository hay Replit.
 
+Nếu môi trường host khóa pnpm store, chạy trực tiếp trong package:
+
+```bash
+cd /workspaces/typescript-node/projects/artifacts/quick-mark
+npm run dev:localhost
+```
+
 ### Chạy trên điện thoại
 
 `localhost` trong container không phải điện thoại. Với Expo Go, có thể thử:
@@ -49,6 +56,14 @@ tunnel cho phiên phát triển:
 ```bash
 pnpm --filter @workspace/quick-mark run dev:tunnel
 ```
+
+Hoặc chạy trực tiếp trong package (phù hợp khi quét QR bằng iPhone):
+
+```bash
+npm run dev:device
+```
+
+QR tunnel phải có dạng `exp://...ngrok...`, không phải `exp://127.0.0.1:8081`.
 
 Quét QR code do Expo hiển thị bằng Expo Go. Tunnel cần kết nối Internet và có
 thể chậm hơn LAN.
