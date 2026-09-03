@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '@workspace/quick-mark-system/hooks/use-colors';
+import { useAppAuth } from '@/lib/auth';
 import {
   readLaunchMode,
   readWatermarkEnabled,
@@ -24,6 +25,7 @@ export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { isSignedIn, user, signOut } = useAppAuth();
   const [watermarkEnabled, setWatermarkEnabled] = useState(true);
   const [launchMode, setLaunchMode] = useState<LaunchMode>('normal');
   const [loading, setLoading] = useState(true);
@@ -130,6 +132,58 @@ export default function SettingsScreen() {
               </Pressable>
             ))}
           </View>
+        </View>
+
+        <Text style={styles.sectionLabel}>ACCOUNT</Text>
+        <View style={styles.accountCard}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {(
+                user?.firstName?.[0] ||
+                user?.primaryEmailAddress?.emailAddress?.[0] ||
+                'T'
+              ).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.accountCopy}>
+            <Text style={styles.settingTitle}>
+              {isSignedIn
+                ? user?.fullName ||
+                  user?.primaryEmailAddress?.emailAddress ||
+                  'TikSnap account'
+                : 'Sign in to TikSnap'}
+            </Text>
+            <Text style={styles.settingDescription}>
+              {isSignedIn
+                ? user?.primaryEmailAddress?.emailAddress ||
+                  'Your account is ready to sync when cloud features arrive.'
+                : 'Optional — your photos and core tools work without an account.'}
+            </Text>
+          </View>
+          {isSignedIn ? (
+            <Pressable
+              accessibilityLabel="Sign out"
+              testID="sign-out"
+              onPress={() => void signOut()}
+              style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}
+            >
+              <Feather name="log-out" size={16} color={colors.destructive} />
+              <Text style={styles.signOutLabel}>Sign out</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              accessibilityLabel="Sign in"
+              testID="sign-in"
+              onPress={() => router.push('/sign-in' as never)}
+              style={({ pressed }) => [
+                styles.accountActionButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Feather name="log-in" size={16} color={colors.primary} />
+              <Text style={styles.accountActionLabel}>Sign in</Text>
+            </Pressable>
+          )}
         </View>
 
         <Text style={styles.sectionLabel}>ABOUT</Text>
@@ -259,6 +313,59 @@ function makeStyles(colors: ReturnType<typeof useColors>, top: number, bottom: n
       fontSize: 12,
     },
     modeOptionTextActive: { color: colors.primary },
+    accountCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 20,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 28,
+    },
+    avatar: {
+      width: 42,
+      height: 42,
+      borderRadius: 15,
+      backgroundColor: colors.secondary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    avatarText: {
+      color: colors.primary,
+      fontFamily: 'Inter_700Bold',
+      fontSize: 16,
+    },
+    accountCopy: { flex: 1, paddingRight: 8 },
+    signOutButton: {
+      minHeight: 36,
+      borderRadius: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 9,
+      backgroundColor: colors.muted,
+    },
+    accountActionButton: {
+      minHeight: 36,
+      borderRadius: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingHorizontal: 10,
+      backgroundColor: colors.secondary,
+    },
+    accountActionLabel: {
+      color: colors.primary,
+      fontFamily: 'Inter_600SemiBold',
+      fontSize: 11,
+    },
+    signOutLabel: {
+      color: colors.destructive,
+      fontFamily: 'Inter_600SemiBold',
+      fontSize: 11,
+    },
     settingIcon: {
       width: 39,
       height: 39,

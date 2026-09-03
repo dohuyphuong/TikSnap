@@ -1,1 +1,2 @@
 - [Quick Mark MVP scope](quick-mark-mvp.md) — the first release is intentionally local-only, with no account, cloud sync, or backend dependency.
+- [Expo Metro port selection](expo-metro-port.md) — production Expo builds must select a free Metro port when preview workflows are running.
